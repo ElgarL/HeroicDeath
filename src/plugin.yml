@@ -3,4 +3,4 @@ main: com.herocraftonline.squallseed31.heroicdeath.HeroicDeath
 version: 1.11.3
 website: https://github.com/ElgarL/HeroicDeath
 description: Minecraft plugin for Bukkit that announces player deaths.
-author: [SquallSeeD31,ElgarL]
+authors: [SquallSeeD31,ElgarL]
