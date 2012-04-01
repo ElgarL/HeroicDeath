@@ -218,7 +218,7 @@ public class HeroicDeathListener implements Listener {
 		if (event instanceof EntityDamageByEntityEvent) {
 			EntityDamageByEntityEvent subEvent = (EntityDamageByEntityEvent) event;
 			damager = subEvent.getDamager();
-			if (subEvent.getCause() == DamageCause.PROJECTILE) {
+			if (damager instanceof Projectile) {
 				damager = ((Projectile) damager).getShooter();
 			}
 		} else if (event instanceof EntityDamageByBlockEvent) {
