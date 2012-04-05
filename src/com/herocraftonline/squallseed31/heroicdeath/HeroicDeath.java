@@ -67,9 +67,6 @@ public class HeroicDeath extends JavaPlugin {
 	public static final Boolean debugging = false;
 
 	public void onEnable() {
-		File path = new File(dataFolder + System.getProperty("file.separator")
-				+ "Config.yml");
-		this.config = YamlConfiguration.loadConfiguration(path);
 
 		pdfFile = getDescription();
 		name = pdfFile.getName();
@@ -78,6 +75,10 @@ public class HeroicDeath extends JavaPlugin {
 		PluginManager pm = getServer().getPluginManager();
 
 		pm.registerEvents(this.listener, this);
+		
+		File path = new File(dataFolder + System.getProperty("file.separator")
+				+ "Config.yml");
+		this.config = YamlConfiguration.loadConfiguration(path);
 
 		messageColor = getConfigColor("colors.message", "RED");
 		nameColor = getConfigColor("colors.name", "DARK_AQUA");
