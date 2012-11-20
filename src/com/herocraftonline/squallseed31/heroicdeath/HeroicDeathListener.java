@@ -1,28 +1,16 @@
 package com.herocraftonline.squallseed31.heroicdeath;
 
 import org.bukkit.block.Block;
-import org.bukkit.entity.Creeper;
-import org.bukkit.entity.Fireball;
-import org.bukkit.entity.Ghast;
-import org.bukkit.entity.Giant;
-import org.bukkit.entity.PigZombie;
 import org.bukkit.entity.Player; 
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
-import org.bukkit.entity.Skeleton;
-import org.bukkit.entity.Slime;
-import org.bukkit.entity.Spider;
 import org.bukkit.entity.TNTPrimed;
-import org.bukkit.entity.Wolf;
-import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByBlockEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -97,109 +85,50 @@ public class HeroicDeathListener implements Listener {
 	}
 
 	public String getAttackerName(Entity damager) {
-		String attackerName = plugin.mobUnknown;
+		
 		if (damager instanceof Player) {
 			Player attacker = (Player) damager;
-			attackerName = HeroicDeath.getPlayerName(attacker);
-		} else if (damager instanceof PigZombie) {
-			attackerName = plugin.mobPigZombie;
-		} else if (damager instanceof Giant) {
-			attackerName = plugin.mobGiant;
-		} else if (damager instanceof Zombie) {
-			attackerName = plugin.mobZombie;
-		} else if (damager instanceof Skeleton) {
-			attackerName = plugin.mobSkeleton;
-		} else if (damager instanceof Spider) {
-			attackerName = plugin.mobSpider;
-		} else if (damager instanceof Creeper) {
-			attackerName = plugin.mobCreeper;
-		} else if (damager instanceof Ghast) {
-			attackerName = plugin.mobGhast;
-		} else if (damager instanceof Slime) {
-			attackerName = plugin.mobSlime;
-		} else if (damager instanceof Wolf) {
-			attackerName = plugin.mobWolf;
+			return HeroicDeath.getPlayerName(attacker);
 		} else {
-			attackerName = plugin.mobMonster;
+			
+			return damager.getType().getName();
 		}
-		return attackerName;
+		
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onEntityDeath(EntityDeathEvent event) {
+	public void onPlayerDeath(PlayerDeathEvent event) {
 		
-		if (!(event instanceof PlayerDeathEvent))
-			return;
 		((PlayerDeathEvent)event).setDeathMessage(null);
-		Player player;
-		if (!(event.getEntity() instanceof Player)) // This should never happen now with PlayerDeathEvent, but you never know...
-			return;
-		else
-			player = (Player) event.getEntity();
+		Player player = (Player) event.getEntity();
 		DeathCertificate dc = null;
+		
 		if (player.getLastDamageCause() != null)
 			dc = deathRecords.containsKey(player.getName()) ? deathRecords.get(player.getName()) : processDamageEvent(player.getLastDamageCause());
+			
 		if (dc == null)
 			dc = new DeathCertificate(player);
+		
 		if (dc.getMessage() == null)
 			dc.setMessage(getMessage(HeroicDeath.DeathMessages.OtherMessages, dc));
+		
 		HeroicDeathEvent hde = new HeroicDeathEvent(dc);
 		plugin.getServer().getPluginManager().callEvent(hde);
 		dc = hde.getDeathCertificate();
+		
 		if (dc.getMessage() == null)
 			dc.setMessage(getMessage(HeroicDeath.DeathMessages.OtherMessages, dc));
+		
 		if (!hde.isCancelled() && !plugin.getEventsOnly()) {
 			plugin.broadcast(dc);
 		}
+		
 		HeroicDeath.log.info("[HeroicDeath] "
 				+ dc.getMessage().replaceAll("(?i)\u00A7[0-F]", ""));
 		plugin.recordDeath(dc);
 	}
 
-	//@EventHandler(priority = EventPriority.MONITOR)
-	public void onEntityDamage(EntityDamageEvent event) {
-		
-		if (event.isCancelled()) {
-			return;
-		}
-		Player player;
-		if (!(event.getEntity() instanceof Player)) {
-			return;
-		} else {
-			try {
-				player = (Player) event.getEntity();
-			} catch (ClassCastException e) {
-				HeroicDeath.log.severe("Cannot cast entity as player: " + e);
-				return;
-			}
-		}
-		String name = player.getName();
-		int damage = event.getDamage();
-		int oldHealth = player.getHealth();
-		int newHealth = oldHealth - damage;
-		HeroicDeath.debug("Player damaged: " + name + " [" + oldHealth + "-"
-				+ damage + "=" + newHealth + "] Cause: "
-				+ event.getCause().toString() + " Ticks: "
-				+ player.getNoDamageTicks());
-		if (newHealth <= 0
-				&& (!deathRecords.containsKey(name) || (deathRecords.get(name)
-						.getCause() != DamageCause.LAVA
-						&& deathRecords.get(name).getCause() != DamageCause.LIGHTNING && deathRecords
-						.get(name).getCause() != DamageCause.ENTITY_ATTACK))) {
-			DeathCertificate dc = processDamageEvent(event);
-			if (dc != null && dc.getCause() != DamageCause.CUSTOM) {
-				deathRecords.put(name, dc);
-				this.plugin
-						.getServer()
-						.getScheduler()
-						.scheduleSyncDelayedTask(plugin, new RecordPurge(name),
-								20L);
-			}
-		}
-	}
-
-	public DeathCertificate processDamageEvent(EntityDamageEvent event) {
-		Player player;
+	public DeathCertificate processDamageEvent(EntityDamageEvent event) {Player player;
 		if (!(event.getEntity() instanceof Player)) {
 			return null;
 		} else {
@@ -230,9 +159,12 @@ public class HeroicDeathListener implements Listener {
 				blockName = "Unknown";
 			}
 		}
+		
 		switch (event.getCause()) {
 		case PROJECTILE:
 		case ENTITY_ATTACK:
+		case ENTITY_EXPLOSION:
+			
 			if (damager == null) {
 				dc.setAttacker("Dispenser");
 				killString = getMessage(
@@ -245,43 +177,46 @@ public class HeroicDeathListener implements Listener {
 						dc);
 			} else {
 				dc.setAttacker(getAttackerName(damager));
-				if (dc.getAttacker().equalsIgnoreCase(plugin.mobCreeper)
+				if (damager instanceof TNTPrimed)
+					killString = getMessage(
+							HeroicDeath.DeathMessages.ExplosionMessages, dc);
+				else if (dc.getAttacker().equalsIgnoreCase("Creeper")
 						&& !HeroicDeath.DeathMessages.CreeperExplosionMessages
 								.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.CreeperExplosionMessages,
 							dc);
-				else if (dc.getAttacker().equalsIgnoreCase(plugin.mobGhast)
+				else if (dc.getAttacker().equalsIgnoreCase("Ghast")
 						&& !HeroicDeath.DeathMessages.GhastMessages.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.GhastMessages, dc);
-				else if (dc.getAttacker().equalsIgnoreCase(plugin.mobSlime)
+				else if (dc.getAttacker().equalsIgnoreCase("Slime")
 						&& !HeroicDeath.DeathMessages.SlimeMessages.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.SlimeMessages, dc);
-				else if (dc.getAttacker().equalsIgnoreCase(plugin.mobZombie)
+				else if (dc.getAttacker().equalsIgnoreCase("Zombie")
 						&& !HeroicDeath.DeathMessages.ZombieMessages.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.ZombieMessages, dc);
-				else if (dc.getAttacker().equalsIgnoreCase(plugin.mobPigZombie)
+				else if (dc.getAttacker().equalsIgnoreCase("PigZombie")
 						&& !HeroicDeath.DeathMessages.PigZombieMessages
 								.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.PigZombieMessages, dc);
-				else if (dc.getAttacker().equalsIgnoreCase(plugin.mobSpider)
+				else if (dc.getAttacker().equalsIgnoreCase("Spider")
 						&& !HeroicDeath.DeathMessages.SpiderMessages.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.SpiderMessages, dc);
-				else if (dc.getAttacker().equalsIgnoreCase(plugin.mobSkeleton)
+				else if (dc.getAttacker().equalsIgnoreCase("Skeleton")
 						&& !HeroicDeath.DeathMessages.SkeletonMessages
 								.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.SkeletonMessages, dc);
-				else if (dc.getAttacker().equalsIgnoreCase(plugin.mobGiant)
+				else if (dc.getAttacker().equalsIgnoreCase("Giant")
 						&& !HeroicDeath.DeathMessages.GiantMessages.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.GiantMessages, dc);
-				else if (dc.getAttacker().equalsIgnoreCase(plugin.mobWolf)
+				else if (dc.getAttacker().equalsIgnoreCase("Wolf")
 						&& !HeroicDeath.DeathMessages.WolfMessages.isEmpty())
 					killString = getMessage(
 							HeroicDeath.DeathMessages.WolfMessages, dc);
@@ -294,20 +229,7 @@ public class HeroicDeathListener implements Listener {
 			killString = getMessage(
 					HeroicDeath.DeathMessages.ExplosionMessages, dc);
 			break;
-		case ENTITY_EXPLOSION:
-			if (damager instanceof TNTPrimed)
-				killString = getMessage(
-						HeroicDeath.DeathMessages.ExplosionMessages, dc);
-			else if (damager instanceof Fireball) {
-				dc.setAttacker(plugin.mobGhast);
-				killString = getMessage(
-						HeroicDeath.DeathMessages.GhastMessages, dc);
-			} else {
-				dc.setAttacker(plugin.mobCreeper);
-				killString = getMessage(
-						HeroicDeath.DeathMessages.CreeperExplosionMessages, dc);
-			}
-			break;
+
 		case CONTACT:
 			dc.setAttacker(blockName);
 			if (blockName != "CACTUS")

@@ -2,3 +2,5 @@
 	- Fix up for new CB 1.1+
 1.11.5:
 	- Fix config loading so it doesn't wipe out any alterations.
+1.11.6:
+	- Update for new monsters (should handle all new monsters without update).
